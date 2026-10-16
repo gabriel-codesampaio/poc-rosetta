@@ -1,0 +1,75 @@
+:root {
+  --bg: #f4f3ef;
+  --panel: #ffffff;
+  --ink: #1d1d1b;
+  --muted: #6b6b66;
+  --line: #e3e2dd;
+  --brand: #5b3cc4;
+  --brand-soft: #efeafc;
+  --user: #5b3cc4;
+  --error: #c0392b;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141413;
+    --panel: #1f1f1d;
+    --ink: #ecebe6;
+    --muted: #a09f99;
+    --line: #34332f;
+    --brand: #a58bff;
+    --brand-soft: #2a2340;
+    --user: #6d4fd6;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 15px/1.45 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+.muted { color: var(--muted); }
+
+.app { display: flex; flex-direction: column; height: 100dvh; max-width: 760px; margin: 0 auto; background: var(--panel); border-inline: 1px solid var(--line); }
+header { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+header .muted { font-size: 12.5px; }
+header a { margin-left: auto; font-size: 12.5px; color: var(--brand); }
+
+.thread { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.group { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+
+.bubble { max-width: min(85%, 520px); padding: 9px 13px; border-radius: 16px; overflow-wrap: anywhere; }
+.bubble.bot { background: var(--bg); border-top-left-radius: 4px; }
+.bubble.user { align-self: flex-end; background: var(--user); color: #fff; border-top-right-radius: 4px; }
+.bubble.error { align-self: center; color: var(--error); font-size: 13px; background: none; }
+.bubble.typing { color: var(--muted); font-style: italic; }
+.md-line { margin: 0; min-height: 1em; }
+
+.bubble.image { padding: 6px; margin: 0; }
+.bubble.image img { display: block; width: 100%; max-width: 360px; border-radius: 12px; }
+.bubble.image figcaption { padding: 6px 6px 2px; font-size: 13.5px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.actions button {
+  font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--brand); background: var(--panel); color: var(--brand);
+}
+.actions button:hover { background: var(--brand-soft); }
+
+.card { width: 240px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); }
+.card img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
+.card-body { padding: 10px 12px 12px; }
+.card h4 { margin: 0; font-size: 15px; }
+.card p { margin: 2px 0 0; font-size: 13px; }
+.card .points { color: var(--brand); font-weight: 600; font-size: 14px; margin-top: 6px; }
+
+.carousel { display: flex; gap: 10px; overflow-x: auto; max-width: 100%; padding-bottom: 6px; scroll-snap-type: x mandatory; }
+.carousel .card { scroll-snap-align: start; }
+
+.composer { display: flex; gap: 8px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); }
+.composer input { flex: 1; min-width: 0; font: inherit; padding: 10px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.composer button { font: inherit; padding: 10px 18px; border-radius: 999px; border: 0; background: var(--brand); color: #fff; cursor: pointer; }
+.composer button:disabled { opacity: .5; cursor: default; }
