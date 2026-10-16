@@ -27,3 +27,7 @@ cd mobile && npm install && npx expo start    # Expo Go, mesma rede
 No painel de debug, mande `Oi` e siga pelos botões, ou mande `limites` para ver todas as regras de fallback agindo ao mesmo tempo.
 
 Os dados (saldo, ofertas, imagens) são fictícios.
+
+## Licença
+
+[MIT](LICENSE)
