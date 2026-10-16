@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rosetta · Painel de debug</title>
+<style>
+  :root {
+    --bg: #f6f6f4; --panel: #fff; --ink: #1d1d1b; --quiet: #6b6b66; --line: #e3e2dd;
+    --accent: #2f6fdb; --accent-soft: #e8f0fc; --warn: #b26a00; --bad: #c0392b; --good: #1f8a4c;
+    --wa-bg: #efe7dd; --wa-bubble: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161615; --panel: #1f1f1d; --ink: #ecebe6; --quiet: #a09f99; --line: #34332f;
+      --accent: #6fa0ff; --accent-soft: #1d2a40; --wa-bg: #1b2420; --wa-bubble: #26302b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+  header { position: sticky; top: 0; z-index: 2; background: var(--panel); border-bottom: 1px solid var(--line); padding: 12px 20px; }
+  h1 { font-size: 16px; margin: 0 0 8px; }
+  h1 small { font-weight: 400; color: var(--quiet); }
+  form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  input, select, button { font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); }
+  input[name=text] { flex: 1 1 220px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 12px; padding: 3px 9px; border-radius: 999px; }
+  main { padding: 16px 20px 40px; display: grid; gap: 16px; }
+  .empty { color: var(--quiet); text-align: center; padding: 48px 0; }
+  .turn { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--quiet); }
+  .meta b { color: var(--ink); }
+  .badge { padding: 1px 7px; border-radius: 999px; font-size: 11.5px; border: 1px solid currentColor; }
+  .badge.good { color: var(--good); } .badge.bad { color: var(--bad); }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .col { padding: 12px 14px; border-right: 1px solid var(--line); min-width: 0; }
+  .col:last-child { border-right: 0; }
+  .col.delivered { background: var(--accent-soft); }
+  .col h3 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--quiet); display: flex; gap: 6px; align-items: center; }
+  .col.delivered h3 { color: var(--accent); }
+  .stack { display: grid; gap: 8px; }
+  .msg { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; overflow-wrap: anywhere; }
+  .msg img { display: block; width: 100%; max-height: 140px; object-fit: cover; border-radius: 6px; }
+  .cap { font-size: 12.5px; color: var(--quiet); margin-top: 4px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .btns button { font-size: 12.5px; padding: 4px 10px; border-color: var(--accent); color: var(--accent); }
+  .carousel { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .carousel .card { flex: 0 0 170px; }
+  .card { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
+  .card img { border-radius: 0; max-height: 100px; }
+  .card .body { padding: 6px 8px; }
+  .card .title { font-weight: 600; }
+  .card .pts { color: var(--accent); font-weight: 600; font-size: 12.5px; }
+  .wa { background: var(--wa-bg); border-radius: 10px; padding: 8px; display: grid; gap: 6px; }
+  .wa .bubble { background: var(--wa-bubble); border-radius: 8px; padding: 6px 9px; white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: 0 1px 0 rgba(0,0,0,.08); }
+  .wa .bubble img { display: block; width: 100%; max-height: 130px; object-fit: cover; border-radius: 6px; margin-bottom: 4px; }
+  .wa .qr { display: grid; gap: 4px; margin-top: 6px; }
+  .wa .qr button { width: 100%; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; color: #128c7e; font-weight: 600; }
+  .wa .list li { cursor: pointer; color: #128c7e; }
+  .wa .list li small { color: var(--quiet); display: block; }
+  .kind { font-size: 10.5px; text-transform: uppercase; color: var(--quiet); letter-spacing: .04em; }
+  .decisions { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 12px; }
+  .decisions li { border-left: 3px solid var(--warn); padding: 2px 8px; }
+  .decisions code { font-size: 11px; color: var(--warn); }
+  .none { font-size: 12px; color: var(--quiet); margin-top: 10px; }
+  details { margin-top: 10px; font-size: 12px; }
+  summary { cursor: pointer; color: var(--quiet); }
+  pre { margin: 6px 0 0; padding: 8px; background: var(--bg); border-radius: 8px; overflow: auto; max-height: 320px; font-size: 11.5px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Rosetta · Painel de debug <small>· a mesma resposta da IA, adaptada para cada canal</small></h1>
+  <form id="composer">
+    <input name="sessionId" aria-label="Sessão" size="14">
+    <select name="channel" aria-label="Canal">
+      <option value="web">web</option>
+      <option value="mobile">mobile</option>
+      <option value="whatsapp">whatsapp</option>
+    </select>
+    <input name="text" placeholder="Mensagem (ex.: Oi, saldo, ofertas, 2, limites)" autocomplete="off">
+    <button class="primary">Enviar</button>
+    <div class="chips">
+      <button type="button" class="chip" data-say="Oi">Oi</button>
+      <button type="button" class="chip" data-say="limites">limites</button>
+      <button type="button" class="chip" id="clear">Limpar painel</button>
+    </div>
+  </form>
+</header>
+<main id="turns"><p class="empty">Nenhum turno ainda. Envie uma mensagem acima ou use o web/mobile.</p></main>
+
+<script>
+  const $ = (s, el = document) => el.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const md = (s) => esc(s)
+    .replace(/^#{1,6}\s+(.+)$/gm, '<b>$1</b>')
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/\*(.+?)\*/g, '<i>$1</i>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<u>$1</u>')
+    .replace(/\n/g, '<br>');
+  const waFmt = (s) => esc(s).replace(/\*(.+?)\*/g, '<b>$1</b>').replace(/_(.+?)_/g, '<i>$1</i>').replace(/~(.+?)~/g, '<s>$1</s>');
+  const pts = (n) => n.toLocaleString('pt-BR') + ' pontos';
+
+  const form = $('#composer');
+  form.sessionId.value = localStorage.getItem('debug-session') || 'debug-' + Math.random().toString(36).slice(2, 7);
+  form.sessionId.addEventListener('change', () => localStorage.setItem('debug-session', form.sessionId.value));
+
+  async function send(body) {
+    const res = await fetch('/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    if (!res.ok) alert('Erro: ' + (await res.text()));
+    await refresh(true);
+  }
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = form.text.value.trim();
+    if (!text) return;
+    send({ sessionId: form.sessionId.value, channel: form.channel.value, text });
+    form.text.value = '';
+  });
+  document.querySelectorAll('[data-say]').forEach((b) => b.addEventListener('click', () =>
+    send({ sessionId: form.sessionId.value, channel: form.channel.value, text: b.dataset.say })));
+  $('#clear').addEventListener('click', async () => { await fetch('/debug/turns', { method: 'DELETE' }); refresh(true); });
+
+  // Cliques em botões renderizados viram uma ação na sessão/canal daquela coluna.
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    send({ sessionId: el.dataset.session, channel: el.dataset.channel, action: { id: el.dataset.action } });
+  });
+
+  const btn = (a, ctx) => `<button data-action="${esc(a.id)}" data-session="${esc(ctx.session)}" data-channel="${esc(ctx.channel)}">${esc(a.label)}</button>`;
+
+  function card(c, ctx) {
+    return `<div class="card">${c.image ? `<img src="${esc(c.image)}" alt="">` : ''}<div class="body">
+      <div class="title">${esc(c.title)}</div>${c.subtitle ? `<div class="cap">${esc(c.subtitle)}</div>` : ''}
+      ${c.points != null ? `<div class="pts">${pts(c.points)}</div>` : ''}
+      ${c.actions?.length ? `<div class="btns">${c.actions.map((a) => btn(a, ctx)).join('')}</div>` : ''}</div></div>`;
+  }
+
+  function primitive(c, ctx) {
+    switch (c.type) {
+      case 'text': return `<div class="msg">${md(c.content)}</div>`;
+      case 'image': return `<div class="msg"><img src="${esc(c.url)}" alt="">${c.caption ? `<div class="cap">${md(c.caption)}</div>` : ''}</div>`;
+      case 'buttons': return `<div class="msg">${c.text ? md(c.text) : ''}<div class="btns">${c.actions.map((a) => btn(a, ctx)).join('')}</div></div>`;
+      case 'card': return card(c, ctx);
+      case 'carousel': return `<div class="carousel">${c.cards.map((x) => card(x, ctx)).join('')}</div>`;
+      default: return `<pre>${esc(JSON.stringify(c, null, 2))}</pre>`;
+    }
+  }
+
+  function whatsapp(m, ctx) {
+    const kind = `<div class="kind">${esc(m.kind)}</div>`;
+    switch (m.kind) {
+      case 'text': return `<div class="bubble">${kind}${waFmt(m.body)}</div>`;
+      case 'media': return `<div class="bubble">${kind}<img src="${esc(m.mediaUrl)}" alt="">${m.body ? waFmt(m.body) : ''}</div>`;
+      case 'quick_reply': return `<div class="bubble">${kind}${waFmt(m.body)}<div class="qr">${m.buttons.map((b) => btn({ id: b.id, label: b.title }, ctx)).join('')}</div></div>`;
+      case 'list': return `<div class="bubble">${kind}${waFmt(m.body)}<div class="cap">☰ ${esc(m.button)}</div><ol class="list">${m.items.map((i) =>
+        `<li data-action="${esc(i.id)}" data-session="${esc(ctx.session)}" data-channel="whatsapp">${esc(i.title)}${i.description ? `<small>${esc(i.description)}</small>` : ''}</li>`).join('')}</ol></div>`;
+      default: return `<pre>${esc(JSON.stringify(m, null, 2))}</pre>`;
+    }
+  }
+
+  function decisions(list) {
+    if (!list.length) return '<div class="none">Nenhuma adaptação: tudo nativo.</div>';
+    return `<ul class="decisions">${list.map((d) => `<li><code>${esc(d.rule)}</code> ${esc(d.detail)}</li>`).join('')}</ul>`;
+  }
+
+  function channelCol(turn, channel) {
+    const r = turn.preview[channel];
+    const ctx = { session: turn.sessionId, channel };
+    const body = channel === 'whatsapp'
+      ? `<div class="wa">${r.payload.map((m) => whatsapp(m, ctx)).join('')}</div>`
+      : `<div class="stack">${r.payload.map((c) => primitive(c, ctx)).join('')}</div>`;
+    return `<section class="col ${turn.channel === channel ? 'delivered' : ''}">
+      <h3>${channel}${turn.channel === channel ? ' · entregue' : ''}</h3>${body}${decisions(r.decisions)}
+      <details><summary>payload (${r.payload.length})</summary><pre>${esc(JSON.stringify(r.payload, null, 2))}</pre></details></section>`;
+  }
+
+  function eventLabel(e) {
+    return e.type === 'action' ? `ação <b>${esc(e.actionId)}</b> (via ${esc(e.via)})` : `texto <b>"${esc(e.text)}"</b>`;
+  }
+
+  function render(turns) {
+    if (!turns.length) return '<p class="empty">Nenhum turno ainda. Envie uma mensagem acima ou use o web/mobile.</p>';
+    return turns.map((t) => {
+      const aiMsgs = t.ai.valid ? t.ai.raw.messages : [];
+      return `<article class="turn">
+        <div class="meta"><b>#${t.id}</b><span>${new Date(t.at).toLocaleTimeString('pt-BR')}</span>
+          <span>sessão <b>${esc(t.sessionId)}</b></span><span>canal <b>${esc(t.channel)}</b></span>
+          <span>${eventLabel(t.event)}</span><span>${t.ms} ms</span><span>adapter <b>${esc(t.adapter)}</b></span>
+          <span class="badge ${t.ai.valid ? 'good' : 'bad'}">${t.ai.valid ? 'contrato válido' : 'contrato inválido'}</span></div>
+        <div class="cols">
+          <section class="col"><h3>Saída da IA (primitivos)</h3>
+            ${t.ai.valid ? `<div class="stack">${aiMsgs.map((c) => primitive(c, { session: t.sessionId, channel: t.channel })).join('')}</div>`
+              : `<ul class="decisions">${t.ai.errors.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`}
+            <details><summary>JSON da IA</summary><pre>${esc(JSON.stringify(t.ai.raw, null, 2))}</pre></details></section>
+          ${['web', 'mobile', 'whatsapp'].map((c) => channelCol(t, c)).join('')}
+        </div></article>`;
+    }).join('');
+  }
+
+  let lastKey = '';
+  async function refresh(force) {
+    const turns = await (await fetch('/debug/turns')).json();
+    const key = turns.length + ':' + (turns[0]?.id ?? 0);
+    if (!force && key === lastKey) return;
+    lastKey = key;
+    $('#turns').innerHTML = render(turns);
+  }
+  refresh(true);
+  setInterval(refresh, 1500);
+</script>
+</body>
+</html>
